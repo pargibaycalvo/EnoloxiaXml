@@ -24,41 +24,40 @@ import javax.xml.stream.XMLStreamReader;
  */
 public class xml {
     Connection conn;
-    String ruta = "/home/Oracle/NetBeansProjects/xmlEno/analisis.xml";
+    String ruta = "/home/oracle/NetBeansProjects/xmlEno/analisis.xml";
     XMLInputFactory fa = XMLInputFactory.newInstance();
-    XMLStreamReader re;
+    XMLStreamReader red;
     PreparedStatement sel;
     PreparedStatement ins;
     ResultSet rs;
     
     String datos[]=new String[4];
-    String inser[]=new String[3];
-    String codig[]=new String[1];
+    String inser[]=new String[4];
+    String codig[]=new String[4];
     
     public void conectBase(){
-        
-        String driver = "jdbc:oracle:thin:";
-        String host = "localhost.localdomain";
-        String porto = "1521";
-        String sid = "orcl";
-        String usuario = "hr";
-        String password = "hr";
-        String url = driver + usuario + "/" + password + "@" +host+ ":" +porto+ ":" +sid;
-        
-        try{
+        try {
+            String driver = "jdbc:oracle:thin:";
+            String host = "localhost";
+            String porto = "1521";
+            String sid = "orcl";
+            String usuario = "hr";
+            String password = "hr";
+            String url = driver+usuario
+                    +"/"+password+"@"+host
+                    +":"+porto+":"+sid;
             conn = DriverManager.getConnection(url);
-            System.out.println("Conexion establecida");
-        }catch (SQLException ex){
-            System.out.println("Error de conexion");
+            System.out.println("Base de datos operativa. Conectado");
+        } catch (SQLException ex) {
             Logger.getLogger(xml.class.getName()).log(Level.SEVERE, null, ex);
         }
+        
     }
     
     public void lectescrXml() throws XMLStreamException, FileNotFoundException, SQLException{
         
         try{
-            XMLInputFactory lec=XMLInputFactory.newInstance();
-            XMLStreamReader red=lec.createXMLStreamReader(new FileInputStream(ruta));
+            red=fa.createXMLStreamReader(new FileInputStream(ruta));
                 while(red.hasNext()){
                     int eventType = red.next();
                     switch(eventType){
@@ -68,19 +67,19 @@ public class xml {
                         //recorremos los datos y los guardamos en el array "codig"
                         case XMLStreamReader.START_ELEMENT:
                             if(red.getAttributeCount()>0){
-                                codig[0]=red.getAttributeValue(0);
+                                codig[1]=red.getAttributeValue(0);
                             }
                             if(red.getLocalName()=="acidez"){
-                                codig[0]=red.getElementText();
+                                datos[0]=red.getElementText();
                             }
                             if(red.getLocalName()=="tipodeuva"){
-                                codig[1]=red.getElementText();
+                                datos[1]=red.getElementText();
                             }
                             if(red.getLocalName()=="cantidade"){
-                                codig[2]=red.getElementText();
+                                datos[2]=red.getElementText();
                             }
                             if(red.getLocalName()=="dni"){
-                                codig[3]=red.getElementText();
+                                datos[3]=red.getElementText();
                             }
                             break;
                             
@@ -89,23 +88,23 @@ public class xml {
                             break;
                         //recogemos los datos del array y los introducimos en la tabla sql que queramos
                         case XMLStreamReader.END_ELEMENT:
-                            if(red.getLocalName()=="analisis"){
-                                sel=conn.prepareStatement("SELECT nomeu,acidezmin,acidezmax from uvas where tipo='" +datos[0]+ "'");
-                                ins=conn.prepareStatement("INSERT into copia(num,nomeu,tratacidez,total)values(?,?,?,?)");
+                            if(red.getLocalName()=="analise"){
+                                sel=conn.prepareStatement("SELECT nomeu,acidezmin,acidezmax from uvas where tipo ='" +datos[1]+ "'");
+                                ins=conn.prepareStatement("INSERT into copia(num,nomeuva,tratacidez,total)values(?,?,?,?)");
                                 rs=sel.executeQuery();
                                 rs.next();
                                 
                                 inser[0]=rs.getString("nomeu");
                                 inser[1]=rs.getString("acidezmin");
                                 inser[2]=rs.getString("acidezmax");
-                                ins.setString(1, codig[0]);
+                                ins.setString(1, codig[1]);
                                 ins.setString(2, inser[0]);
                                 
-                                if(Integer.parseInt(datos[1])<Integer.parseInt(inser[1])){
-                                    ins.setString(3, "Baja, suba la acidez");
+                                if(Integer.parseInt(datos[0])<Integer.parseInt(inser[1])){
+                                    ins.setString(3, "Baja");
                                 }
-                                else if(Integer.parseInt(datos[1])>Integer.parseInt(inser[2])){
-                                    ins.setString(3, "Alta, baje la acidez");
+                                else if(Integer.parseInt(datos[0])>Integer.parseInt(inser[2])){
+                                    ins.setString(3, "Alta");
                                 }
                                 else{
                                     ins.setString(3, "Perfecta");
